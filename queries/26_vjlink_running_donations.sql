@@ -5,4 +5,16 @@
 -- Колонки: stream_id, title, sent_at_sec, donor, amount, running_total
 -- Порядок: stream_id по возрастанию, внутри стрима sent_at_sec по возрастанию
 -- Строк:   192
-
+SELECT st.stream_id, st.title, d.sent_at_sec, d.nickname AS donor, d.amount,
+       SUM(d.amount) OVER (
+           PARTITION BY st.stream_id
+           ORDER BY d.sent_at_sec, d.donation_id
+           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+       ) AS running_total
+FROM streamers AS s
+JOIN streams AS st ON st.streamer_id = s.streamer_id
+JOIN stream_donations AS d ON d.stream_id = st.stream_id
+WHERE s.nickname = 'Вжлинк'
+  AND st.started_at >= TIMESTAMPTZ '2021-01-01 00:00:00+00'
+  AND st.started_at < TIMESTAMPTZ '2022-01-01 00:00:00+00'
+ORDER BY st.stream_id, d.sent_at_sec, d.donation_id;
