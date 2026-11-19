@@ -1,10 +1,3 @@
--- 28. Три самых дорогих предмета в каждой категории лавки.
--- Категория: 'recipe' при is_recipe, иначе 'assembled' при строках в item_recipe.item_id,
--- иначе 'basic'; place 1-3 по cost убыв., при равной цене по name; purchases — строк match_items, иначе 0.
---
--- Колонки: category, place, name, cost, purchases
--- Порядок: category по возрастанию, затем place по возрастанию
--- Строк:   9
 WITH categorized_items AS (
     SELECT i.item_id, i.name, i.cost,
            CASE
@@ -21,10 +14,17 @@ WITH categorized_items AS (
                PARTITION BY category ORDER BY cost DESC, name
            ) AS place
     FROM categorized_items
+), top_items AS (
+    SELECT item_id, category, place, name, cost
+    FROM ranked_items
+    WHERE place <= 3
+), purchase_counts AS (
+    SELECT mi.item_id, COUNT(*) AS purchases
+    FROM match_items AS mi
+    JOIN top_items AS i ON i.item_id = mi.item_id
+    GROUP BY mi.item_id
 )
-SELECT i.category, i.place, i.name, i.cost,
-       (SELECT COUNT(*) FROM match_items AS mi
-        WHERE mi.item_id = i.item_id) AS purchases
-FROM ranked_items AS i
-WHERE i.place <= 3
+SELECT i.category, i.place, i.name, i.cost, COALESCE(pc.purchases, 0) AS purchases
+FROM top_items AS i
+LEFT JOIN purchase_counts AS pc ON pc.item_id = i.item_id
 ORDER BY i.category, i.place;

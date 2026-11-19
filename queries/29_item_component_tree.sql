@@ -1,14 +1,7 @@
--- 29. Полное дерево сборки Guardian Greaves, Bloodthorn, Harpoon и Hurricane Pike.
--- Строка на каждый путь вниз, сам корень не выводится; lvl с 1, qty — quantity последнего
--- шага, qty_total — произведение quantity по пути, path — имена от корня через ' > '.
---
--- Колонки: root_item, lvl, component, qty, qty_total, path
--- Порядок: root_item по возрастанию, затем path по возрастанию
--- Строк:   34
 WITH RECURSIVE component_tree AS (
     SELECT root.name AS root_item, 1 AS lvl, c.item_id AS component_id,
            c.name AS component, r.quantity AS qty,
-           r.quantity::bigint AS qty_total,
+           r.quantity::numeric AS qty_total,
            root.name || ' > ' || c.name AS path,
            ARRAY[root.item_id, c.item_id] AS visited
     FROM items AS root
@@ -30,4 +23,3 @@ WITH RECURSIVE component_tree AS (
 SELECT root_item, lvl, component, qty, qty_total, path
 FROM component_tree
 ORDER BY root_item, path;
-
