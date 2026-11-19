@@ -4,4 +4,22 @@
 -- Колонки: version, hero, bans, picks, diff
 -- Порядок: diff по убыванию, затем hero по возрастанию, затем version по возрастанию
 -- Строк:   99
-
+WITH ban_counts AS (
+    SELECT m.patch_id, b.hero_id, COUNT(*) AS bans
+    FROM match_bans AS b
+    JOIN matches AS m ON m.match_id = b.match_id
+    GROUP BY m.patch_id, b.hero_id
+), pick_counts AS (
+    SELECT m.patch_id, mp.hero_id, COUNT(*) AS picks
+    FROM match_players AS mp
+    JOIN matches AS m ON m.match_id = mp.match_id
+    GROUP BY m.patch_id, mp.hero_id
+)
+SELECT p.version, h.name AS hero, b.bans, COALESCE(pc.picks, 0) AS picks,
+       b.bans - COALESCE(pc.picks, 0) AS diff
+FROM ban_counts AS b
+LEFT JOIN pick_counts AS pc ON pc.patch_id = b.patch_id AND pc.hero_id = b.hero_id
+JOIN patches AS p ON p.patch_id = b.patch_id
+JOIN heroes AS h ON h.hero_id = b.hero_id
+WHERE b.bans > COALESCE(pc.picks, 0)
+ORDER BY diff DESC, hero, p.version;
